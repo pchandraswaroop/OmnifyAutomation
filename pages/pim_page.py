@@ -1,3 +1,5 @@
+import time
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
@@ -79,9 +81,7 @@ class PimPage:
         self.driver = driver
         self.wait = WebDriverWait(driver, 15)
 
-    # ---------------------------
-    # PIM Navigation
-    # ---------------------------
+
 
     def open_pim(self):
 
@@ -89,7 +89,6 @@ class PimPage:
             EC.visibility_of_element_located(self.PIM_MENU)
         )
 
-        # Requirement specifically asks for mouse hover
         ActionChains(self.driver).move_to_element(pim).perform()
 
         self.wait.until(
@@ -100,9 +99,7 @@ class PimPage:
             EC.url_contains("/pim/")
         )
 
-    # ---------------------------
-    # Add Employee
-    # ---------------------------
+
 
     def click_add_employee(self):
 
@@ -113,59 +110,61 @@ class PimPage:
         self.wait.until(
             EC.visibility_of_element_located(self.FIRST_NAME)
         )
+    def add_employee(self, first_name, middle_name, last_name, employee_id=None):
+        """
+        Add a new employee with a unique Employee ID.
+        """
 
-    def add_employee(
-        self,
-        first_name,
-        middle_name,
-        last_name
-    ):
-
-        first_name_element = self.wait.until(
-            EC.visibility_of_element_located(
-                self.FIRST_NAME
-            )
+        # First Name
+        first_name_field = self.wait.until(
+            EC.element_to_be_clickable(self.FIRST_NAME)
         )
+        first_name_field.clear()
+        first_name_field.send_keys(first_name)
 
-        first_name_element.clear()
-        first_name_element.send_keys(first_name)
-
-        middle_name_element = self.wait.until(
-            EC.visibility_of_element_located(
-                self.MIDDLE_NAME
-            )
+        # Middle Name
+        middle_name_field = self.wait.until(
+            EC.element_to_be_clickable(self.MIDDLE_NAME)
         )
+        middle_name_field.clear()
+        middle_name_field.send_keys(middle_name)
 
-        middle_name_element.clear()
-        middle_name_element.send_keys(middle_name)
-
-        last_name_element = self.wait.until(
-            EC.visibility_of_element_located(
-                self.LAST_NAME
-            )
+        last_name_field = self.wait.until(
+            EC.element_to_be_clickable(self.LAST_NAME)
         )
+        last_name_field.clear()
+        last_name_field.send_keys(last_name)
 
-        last_name_element.clear()
-        last_name_element.send_keys(last_name)
-
-        # Employee ID is generated/pre-filled by the application.
-        # We intentionally don't overwrite it.
-
-        self.wait.until(
-            EC.element_to_be_clickable(
-                self.SAVE_BUTTON
+        
+        if employee_id:
+            employee_id_field = self.wait.until(
+                EC.element_to_be_clickable(self.EMPLOYEE_ID)
             )
-        ).click()
 
-        self.wait.until(
-            EC.visibility_of_element_located(
-                self.SUCCESS_MESSAGE
-            )
+            employee_id_field.click()
+            employee_id_field.send_keys(Keys.CONTROL, "a")
+
+            employee_id_field.send_keys(Keys.BACKSPACE)
+
+            employee_id_field.send_keys(employee_id)
+
+        save_button = self.wait.until(
+            EC.element_to_be_clickable(self.SAVE_BUTTON)
         )
+        save_button.click()
 
-    # ---------------------------
-    # Employee List
-    # ---------------------------
+
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.url_contains("/pim/viewPersonalDetails/")
+            )
+        except:
+            WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located(self.SUCCESS_MESSAGE)
+            )
+
+        time.sleep(1)
+
 
     def open_employee_list(self):
 
@@ -195,9 +194,6 @@ class PimPage:
             )
         )
 
-    # ---------------------------
-    # Search Employee
-    # ---------------------------
 
     def search_employee(self, employee_name):
 
@@ -224,8 +220,7 @@ class PimPage:
                 )
             ).click()
         except:
-            # If the exact suggestion isn't available,
-            # continue with the typed value.
+          
             pass
 
         self.wait.until(
@@ -234,40 +229,38 @@ class PimPage:
             )
         ).click()
 
-    # ---------------------------
-    # Verify Employee
-    # ---------------------------
 
-def verify_employee(self, employee_name):
-    """
-    Verify that an employee exists in the employee table.
-    Re-fetches rows each time to avoid stale element references.
-    """
 
-    wait = WebDriverWait(self.driver, 15)
+    def verify_employee(self, employee_name):
+        """
+        Verify an employee exists in the current employee table.
+        Handles OrangeHRM table refreshes and stale elements.
+        """
 
-    try:
-        # Wait until the employee table is loaded
-        wait.until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".oxd-table-body")
+        wait = WebDriverWait(self.driver, 15)
+
+        try:
+            wait.until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".oxd-table-body")
+                )
             )
-        )
 
-        # Get the table text directly instead of keeping stale row elements
-        table = self.driver.find_element(
-            By.CSS_SELECTOR,
-            ".oxd-table-body"
-        )
+            time.sleep(1)
 
-        table_text = table.text.lower()
 
-        if employee_name.lower() in table_text:
-            print(f"{employee_name} - Name Verified")
-            return True
+            table_text = self.driver.execute_script("""
+                const table = document.querySelector('.oxd-table-body');
+                return table ? table.innerText : '';
+            """)
 
-        return False
+            if employee_name.lower() in table_text.lower():
+                print(f"{employee_name} - Name Verified")
+                return True
 
-    except Exception as e:
-        print(f"Error while verifying {employee_name}: {e}")
-        return False
+            print(f"{employee_name} - Name NOT Verified")
+            return False
+
+        except Exception as e:
+            print(f"Error while verifying {employee_name}: {e}")
+            return False
