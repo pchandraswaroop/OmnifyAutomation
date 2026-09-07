@@ -17,6 +17,7 @@ class PimPage:
         By.XPATH,
         "//a[normalize-space()='Add Employee']"
     )
+    FORM_LOADER = (By.CSS_SELECTOR, ".oxd-form-loader")
 
     EMPLOYEE_LIST = (
         By.XPATH,
@@ -79,7 +80,7 @@ class PimPage:
 
     def __init__(self, driver):
         self.driver = driver
-        self.wait = WebDriverWait(driver, 15)
+        self.wait = WebDriverWait(driver, 30)
 
 
 
@@ -115,14 +116,19 @@ class PimPage:
         Add a new employee with a unique Employee ID.
         """
 
-        # First Name
+        try:
+            self.wait.until(
+                EC.invisibility_of_element_located(self.FORM_LOADER)
+            )
+        except:
+            pass
+
         first_name_field = self.wait.until(
             EC.element_to_be_clickable(self.FIRST_NAME)
         )
         first_name_field.clear()
         first_name_field.send_keys(first_name)
 
-        # Middle Name
         middle_name_field = self.wait.until(
             EC.element_to_be_clickable(self.MIDDLE_NAME)
         )
@@ -135,27 +141,39 @@ class PimPage:
         last_name_field.clear()
         last_name_field.send_keys(last_name)
 
-        
         if employee_id:
+
+            try:
+                self.wait.until(
+                    EC.invisibility_of_element_located(self.FORM_LOADER)
+                )
+            except:
+                pass
+
             employee_id_field = self.wait.until(
-                EC.element_to_be_clickable(self.EMPLOYEE_ID)
+                EC.visibility_of_element_located(self.EMPLOYEE_ID)
             )
 
             employee_id_field.click()
             employee_id_field.send_keys(Keys.CONTROL, "a")
-
             employee_id_field.send_keys(Keys.BACKSPACE)
-
             employee_id_field.send_keys(employee_id)
+
+        try:
+            self.wait.until(
+                EC.invisibility_of_element_located(self.FORM_LOADER)
+            )
+        except:
+            pass
 
         save_button = self.wait.until(
             EC.element_to_be_clickable(self.SAVE_BUTTON)
         )
+
         save_button.click()
 
-
         try:
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 20).until(
                 EC.url_contains("/pim/viewPersonalDetails/")
             )
         except:
@@ -233,34 +251,23 @@ class PimPage:
 
     def verify_employee(self, employee_name):
         """
-        Verify an employee exists in the current employee table.
-        Handles OrangeHRM table refreshes and stale elements.
+        Verify that the searched employee appears in the employee table.
         """
 
-        wait = WebDriverWait(self.driver, 15)
+        employee_text = (
+            By.XPATH,
+            f"//div[contains(@class,'oxd-table-body')]"
+            f"//*[contains(normalize-space(),'{employee_name}')]"
+        )
 
         try:
-            wait.until(
-                EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, ".oxd-table-body")
-                )
+            self.wait.until(
+                EC.visibility_of_element_located(employee_text)
             )
 
-            time.sleep(1)
+            print(f"{employee_name} - Name Verified")
+            return True
 
-
-            table_text = self.driver.execute_script("""
-                const table = document.querySelector('.oxd-table-body');
-                return table ? table.innerText : '';
-            """)
-
-            if employee_name.lower() in table_text.lower():
-                print(f"{employee_name} - Name Verified")
-                return True
-
+        except Exception:
             print(f"{employee_name} - Name NOT Verified")
-            return False
-
-        except Exception as e:
-            print(f"Error while verifying {employee_name}: {e}")
             return False

@@ -26,12 +26,10 @@ class DashboardPage:
 
     def is_dashboard_visible(self):
         try:
-            # First wait for the Dashboard URL
             self.wait.until(
                 EC.url_contains("/dashboard")
             )
 
-            # Then wait for the Dashboard heading
             self.wait.until(
                 EC.visibility_of_element_located(
                     self.DASHBOARD_HEADER
