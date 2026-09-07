@@ -64,13 +64,14 @@ orangehrm-qa-automation/
 Clone the repository:
 
 ```bash
-git clone YOUR_GITHUB_URL
+git clone https://github.com/pchandraswaroop/OmnifyAutomation.git
+
 ```
 
 Navigate to the project:
 
 ```bash
-cd orangehrm-qa-automation
+cd OmnifyAutomation
 ```
 
 Install dependencies:

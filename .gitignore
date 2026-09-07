@@ -1,9 +1,23 @@
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Pytest cache
 .pytest_cache/
-.venv/
+
+# Virtual environment
 venv/
-.env
-.idea/
+.venv/
+env/
+
+# Coverage / test reports
+.coverage
+htmlcov/
+
+# IDE files
 .vscode/
-screenshots/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
